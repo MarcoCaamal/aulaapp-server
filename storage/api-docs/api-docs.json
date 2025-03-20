@@ -1,0 +1,1552 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Swagger Asesora-T API Doc",
+        "description": "Documentación de la API de Asesora-T",
+        "contact": {
+            "email": "caamalmarco99@gmail.com"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://asesorat-backend.test:8080",
+            "description": "SwaggerHUB API Mocking"
+        }
+    ],
+    "paths": {
+        "/api/cuentas/login": {
+            "post": {
+                "tags": [
+                    "Cuentas"
+                ],
+                "summary": "Autenticarse en la API",
+                "description": "Aquí el usuario puede autenticarse en la API.",
+                "operationId": "login",
+                "requestBody": {
+                    "description": "Credenciales del usuario",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CredencialesUsuario"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "ok"
+                    }
+                }
+            }
+        },
+        "/api/alumnos/{idAlumno}/asesorias-confirmadas": {
+            "get": {
+                "tags": [
+                    "Asesorias"
+                ],
+                "summary": "Obtener Asesorias Confirmadas",
+                "description": "Devuelve las asesorias confirmadas del alumno",
+                "operationId": "GetAllConfirmadas",
+                "parameters": [
+                    {
+                        "name": "idAlumno",
+                        "in": "path",
+                        "description": "ID del alumno",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Numero de página que por defecto es la 1",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64",
+                            "default": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginadorDTO"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/asesorias/horarios-disponibles": {
+            "get": {
+                "tags": [
+                    "Asesorias"
+                ],
+                "summary": "Obtener Asesorias Disponibles para el alumno",
+                "description": "Devuelve las asesorias disponibles para el alumno",
+                "operationId": "GetAllDisponibles",
+                "parameters": [
+                    {
+                        "name": "horaInicio",
+                        "in": "query",
+                        "description": "Filtrar por Hora de Inicio",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "horaFin",
+                        "in": "query",
+                        "description": "Filtrar por Hora de Fin",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "nombre",
+                        "in": "query",
+                        "description": "Filtrar por nombre del profesor",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "turno",
+                        "in": "query",
+                        "description": "Filtrar por turno (0 = Matutino, 1 = Vespertino)",
+                        "required": false,
+                        "style": "form",
+                        "schema": {
+                            "$ref": "#/components/schemas/TurnoEnum"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Número de la página actual que por defecto es 1",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64",
+                            "default": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginadorDTO"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/asesorias/horarios-disponibles/cantidad-por-turnos": {
+            "get": {
+                "tags": [
+                    "Asesorias"
+                ],
+                "summary": "Obtener Cantidad de Asesorias Disponibles por Turnos.",
+                "description": "Devuelve el número de asesorias disponibles para el alumno por turnos.",
+                "operationId": "GetCantidadAsesoriasDisponiblesPorTurnos",
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "matutinos": {
+                                            "type": "integer",
+                                            "format": "int64"
+                                        },
+                                        "vespertinos": {
+                                            "type": "integer",
+                                            "format": "int64"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/profesores/{profesorId}/asesorias/finalizadas": {
+            "get": {
+                "tags": [
+                    "Asesorias"
+                ],
+                "summary": "Obtener lista paginada de asesorias finalizadas del profesor.",
+                "description": "Devuelve una lista paginada de las asesorias finalizadas del profesor.",
+                "operationId": "GetAllFinalizadasProfesor",
+                "parameters": [
+                    {
+                        "name": "profesorId",
+                        "in": "path",
+                        "description": "ID del profesor",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Número de la página actual que por defecto es 1",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64",
+                            "default": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginadorDTO"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/profesores/{profesorId}/asesorias-confirmadas": {
+            "get": {
+                "tags": [
+                    "Asesorias"
+                ],
+                "summary": "Obtener lista paginada de asesorias confirmadas de un profesor.",
+                "description": "Devuelve una lista paginada de las asesorias confirmadas de un profesor.",
+                "operationId": "GetAllConfirmadasProfesor",
+                "parameters": [
+                    {
+                        "name": "profesorId",
+                        "in": "path",
+                        "description": "ID del profesor",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Número de la página actual que por defecto es 1",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64",
+                            "default": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginadorDTO"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/profesores/{profesorId}/asesorias-confirmadas/{asesoriaId}/lista-alumnos": {
+            "get": {
+                "tags": [
+                    "Asesorias"
+                ],
+                "summary": "Obtener lista paginada de alumnos que tienen confirmada su asistencia a una asesoria.",
+                "description": "Devuelve una lista paginada de los alumnos que tiene una asistencia confirmada a la asesoria confirmada.",
+                "operationId": "GetListaALumnosAsesoria",
+                "parameters": [
+                    {
+                        "name": "profesorId",
+                        "in": "path",
+                        "description": "ID del profesor",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "asesoriaId",
+                        "in": "path",
+                        "description": "ID de la asesoria confirmada",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Número de la página actual que por defecto es 1",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64",
+                            "default": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginadorDTO"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/alumnos/{alumnoId}/horarios-disponibles/{horarioId}/agendar": {
+            "post": {
+                "tags": [
+                    "Asesorias"
+                ],
+                "summary": "Agenda una asesoria",
+                "description": "El alumno agenda una asesoria al la cual quiere asistir. Devuelve una objeto con la respuesta de que si la asesoria se agendo con exito o hubo errores.",
+                "operationId": "PostAgendarAsesoriaAlumno",
+                "parameters": [
+                    {
+                        "name": "alumnoId",
+                        "in": "path",
+                        "description": "ID del alumno que quiere agendar una asesoria",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "horarioId",
+                        "in": "path",
+                        "description": "ID del horario de la asesoria a agendar",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "fecha": {
+                                        "type": "string",
+                                        "format": "date"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseHelper"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/alumnos/{alumnoId}/asesorias-confirmadas/{asesoriaId}/cancelar": {
+            "put": {
+                "tags": [
+                    "Asesorias"
+                ],
+                "summary": "Cancela la una asesoria confirmada del alumno",
+                "description": "Cancela la asesoria a la cual el alumno yo quiere asistir. El método devuelve una respuesta de que si la operación fue correcta o algo salio mal.",
+                "operationId": "putCancelarAsesoriaConfirmadaAlumno",
+                "parameters": [
+                    {
+                        "name": "alumnoId",
+                        "in": "path",
+                        "description": "ID del alumno que quiere cancelar una asistencia a una asesoria",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "asesoriaId",
+                        "in": "path",
+                        "description": "ID de la asesoria confirmada a cancelar",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "justificacion": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseHelper"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/profesores/{profesorId}/asesorias-confirmadas/{asesoriaId}/cancelar": {
+            "put": {
+                "tags": [
+                    "Asesorias"
+                ],
+                "summary": "Cancela la una asesoria confirmada del alumno",
+                "description": "Cancela la asesoria a la cual el alumno yo quiere asistir. El método devuelve una respuesta de que si la operación fue correcta o algo salio mal.",
+                "operationId": "putCancelarAsesoriaConfirmadaAsesor",
+                "parameters": [
+                    {
+                        "name": "profesorId",
+                        "in": "path",
+                        "description": "ID del profesor que quiere cancelar una asesoria",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "asesoriaId",
+                        "in": "path",
+                        "description": "ID de la asesoria confirmada a cancelar",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseHelper"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/foros": {
+            "get": {
+                "tags": [
+                    "Foros"
+                ],
+                "summary": "Obtener Foros",
+                "description": "Devuelve un listado de todos los foros paginados por materia",
+                "operationId": "GetAllForos",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Número de pagina",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "materia_id",
+                        "in": "query",
+                        "description": "ID materia",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginadorDTO"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/users/{userId}/foros": {
+            "get": {
+                "tags": [
+                    "Foros"
+                ],
+                "summary": "Obtener Foros de un usuario",
+                "description": "Devuelve una lista de foros paginados del usuario",
+                "operationId": "GetAllForosUsuario",
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "description": "ID del usuario",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "path",
+                        "description": "Número de página",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64",
+                            "default": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginadorDTO"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Foros"
+                ],
+                "summary": "Publicar foro",
+                "description": "Crear un foro",
+                "operationId": "PostForo",
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "description": "ID usuario",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "titulo",
+                                    "contenido",
+                                    "materia_id"
+                                ],
+                                "properties": {
+                                    "titulo": {
+                                        "required": [
+                                            "true"
+                                        ],
+                                        "type": "string"
+                                    },
+                                    "contenido": {
+                                        "required": [
+                                            "true"
+                                        ],
+                                        "type": "string"
+                                    },
+                                    "imagen": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "materia_id": {
+                                        "type": "integer",
+                                        "format": "int64"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseHelper"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/users/{userId}/foros/{foroId}": {
+            "get": {
+                "tags": [
+                    "Foros"
+                ],
+                "summary": "Obtener un foro de un usuario",
+                "description": "Devuelve un foro de un usuario",
+                "operationId": "GetForoUsuario",
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "description": "ID usuario",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "foroId",
+                        "in": "path",
+                        "description": "ID foro",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ForoDTO"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Foros"
+                ],
+                "summary": "Actualizar un foro",
+                "description": "Actuliza un foro de un usuario",
+                "operationId": "PutForo",
+                "parameters": [
+                    {
+                        "name": "_method",
+                        "in": "query",
+                        "description": "method",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "default": "PUT"
+                        }
+                    },
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "description": "ID usuario",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "foroId",
+                        "in": "path",
+                        "description": "ID foro",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "titulo",
+                                    "contenido"
+                                ],
+                                "properties": {
+                                    "titulo": {
+                                        "required": [
+                                            "true"
+                                        ],
+                                        "type": "string"
+                                    },
+                                    "contenido": {
+                                        "required": [
+                                            "true"
+                                        ],
+                                        "type": "string"
+                                    },
+                                    "imagen": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseHelper"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/foros/{foroId}/darLike": {
+            "post": {
+                "tags": [
+                    "Foros"
+                ],
+                "summary": "Dar like a un foro",
+                "description": "Dar like un foro de un usuario (0 = LIKE, 1 = DISLIKE)",
+                "operationId": "PostDarLike",
+                "parameters": [
+                    {
+                        "name": "foroId",
+                        "in": "path",
+                        "description": "ID foro",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "tipo_like": {
+                                        "type": "integer",
+                                        "format": "int64",
+                                        "default": 0
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseHelper"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/foros/{foroId}": {
+            "post": {
+                "tags": [
+                    "Foros"
+                ],
+                "summary": "Reportar un foro",
+                "description": "Reportar foro que el usuario cree inapropiado",
+                "operationId": "PostReportar",
+                "parameters": [
+                    {
+                        "name": "foroId",
+                        "in": "path",
+                        "description": "ID foro",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "motivo": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseHelper"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/users/{userId}/foros/{foroId}": {
+            "delete": {
+                "tags": [
+                    "Foros"
+                ],
+                "summary": "Elimina un foro",
+                "description": "Elimina un foro de un usuario",
+                "operationId": "DeleteForo",
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "description": "ID usuario",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    {
+                        "name": "foroId",
+                        "in": "path",
+                        "description": "ID foro",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseHelper"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "DiaSemanaEnum": {
+                "type": "string",
+                "enum": [
+                    "Lunes",
+                    "Martes",
+                    "Miercoles",
+                    "Jueves",
+                    "Viernes"
+                ]
+            },
+            "EstatusAsesoriaEnum": {
+                "type": "string",
+                "enum": [
+                    "PENDIENTE",
+                    "FINALIZADA",
+                    "CANCELADO"
+                ]
+            },
+            "EstatusForoEnum": {
+                "type": "string",
+                "enum": [
+                    "ACTIVO",
+                    "DESHABILITADO",
+                    "BANEADO"
+                ]
+            },
+            "EstatusRespuestaEnum": {
+                "type": "string",
+                "enum": [
+                    "ACTIVO",
+                    "BANEADO",
+                    "DESHABILITADO"
+                ]
+            },
+            "TipoLikeEnum": {
+                "type": "string",
+                "enum": [
+                    "LIKE",
+                    "DISLIKE"
+                ]
+            },
+            "TurnoEnum": {
+                "type": "integer",
+                "format": "enum",
+                "enum": [
+                    0,
+                    1
+                ]
+            },
+            "ResponseHelper": {
+                "title": "ResponseHelper",
+                "properties": {
+                    "message": {
+                        "title": "message",
+                        "description": "Mensaje de la respuesta",
+                        "type": "string"
+                    },
+                    "success": {
+                        "title": "success",
+                        "description": "Indica si el proceso solicitado fue exitoso",
+                        "type": "boolean"
+                    },
+                    "statusCode": {
+                        "title": "statusCode",
+                        "description": "Código de estado http",
+                        "type": "integer"
+                    }
+                },
+                "type": "object"
+            },
+            "AsesoriaDTO": {
+                "title": "AsesoriasConfirmadasAlumno",
+                "description": "AsesoriaConfirmadaAlumno Model",
+                "properties": {
+                    "id": {
+                        "title": "ID Asesoria",
+                        "description": "ID de la Asesoria",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "estado": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/EstatusAsesoriaEnum"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "fecha": {
+                        "title": "Fecha",
+                        "description": "Fecha de la Asesoria",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "04-03-2023 12:00:00",
+                        "nullable": true
+                    },
+                    "evidencias": {
+                        "title": "Evidencias",
+                        "description": "Evidencias de la asesoria",
+                        "type": "string",
+                        "example": "04-03-2023 12:00:00",
+                        "nullable": true
+                    },
+                    "asesor": {
+                        "title": "Fecha",
+                        "description": "ID del horario",
+                        "format": "date-time",
+                        "example": "04-03-2023 12:00:00",
+                        "nullable": true,
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/ProfesorDTO"
+                            }
+                        ]
+                    },
+                    "created_at": {
+                        "title": "Created At",
+                        "description": "Fecha de creación",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "04-03-2023 12:00:00",
+                        "nullable": true
+                    },
+                    "updated_at": {
+                        "title": "Updated At",
+                        "description": "Fecha de edición",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "04-03-2023 12:00:00",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "ForoDTO": {
+                "title": "Foros",
+                "description": "Foro model",
+                "properties": {
+                    "id": {
+                        "description": "ID del foro",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "titulo": {
+                        "description": "Titulo del foro",
+                        "type": "string"
+                    },
+                    "contenido": {
+                        "description": "Contenido del foro",
+                        "type": "string"
+                    },
+                    "estatus": {
+                        "$ref": "#/components/schemas/EstatusForoEnum"
+                    },
+                    "url_imagen": {
+                        "description": "Url De La Imagen del foro",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "motivo_baja": {
+                        "description": "motivo de baja del foro",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "materia": {
+                        "nullable": true,
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/MateriaDTO"
+                            }
+                        ]
+                    },
+                    "usuario": {},
+                    "created_at": {
+                        "type": "string"
+                    },
+                    "updated_at": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "HorarioDTO": {
+                "title": "Horarios",
+                "description": "Horario model",
+                "properties": {
+                    "id": {
+                        "title": "ID",
+                        "description": "ID del hoario",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "lugar": {
+                        "title": "Lugar",
+                        "description": "Lugar del horario",
+                        "type": "string",
+                        "example": "Aula 3"
+                    },
+                    "dia_semana": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/DiaSemanaEnum"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "hora_inicio": {
+                        "title": "Hora de Inicio",
+                        "description": "Hora de inicio del horario",
+                        "type": "string",
+                        "format": "time",
+                        "example": "12:00:00"
+                    },
+                    "hora_fin": {
+                        "title": "Hora de Fin",
+                        "description": "Hora de fin del horario",
+                        "type": "string",
+                        "format": "time",
+                        "example": "12:00:00"
+                    },
+                    "asesor": {
+                        "$ref": "#/components/schemas/ProfesorDTO"
+                    },
+                    "materia": {
+                        "$ref": "#/components/schemas/MateriaDTO"
+                    },
+                    "created_at": {
+                        "title": "Created At",
+                        "description": "Fecha de creación del horario",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "04-03-2023 12:00:00"
+                    },
+                    "updated_at": {
+                        "title": "Updated At",
+                        "description": "Fecha de edición del horario",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "04-03-2023 12:00:00"
+                    }
+                },
+                "type": "object"
+            },
+            "MateriaDTO": {
+                "title": "Materias",
+                "description": "Materia model",
+                "properties": {
+                    "id": {
+                        "title": "ID materia",
+                        "description": "ID de la materia",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "nombre": {
+                        "title": "Nombre",
+                        "description": "Nombre de la materia",
+                        "type": "string",
+                        "example": "QUÍMICA"
+                    },
+                    "created_at": {
+                        "title": "Created At",
+                        "description": "Fecha de creación de la materia",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "04-03-2023 12:00:00"
+                    },
+                    "updated_at": {
+                        "title": "Updated At",
+                        "description": "Fecha de edición del horario",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "04-03-2023 12:00:00"
+                    }
+                },
+                "type": "object"
+            },
+            "AlumnoDTO": {
+                "title": "Alumnos",
+                "description": "Alumno model",
+                "properties": {
+                    "id": {
+                        "title": "ID alumno",
+                        "description": "ID del alumno",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "nombre": {
+                        "title": "Nombre",
+                        "description": "Nombre del alumno",
+                        "type": "string",
+                        "example": "Jhon"
+                    },
+                    "apellido_paterno": {
+                        "title": "Apellido Paterno",
+                        "description": "Apellido Paterno del alumno",
+                        "type": "string",
+                        "example": "Perez"
+                    },
+                    "apellido_materno": {
+                        "title": "Apellido Marterno",
+                        "description": "Apellido Materno del alumno",
+                        "type": "string",
+                        "example": "Perez"
+                    },
+                    "curp": {
+                        "title": "CURP",
+                        "description": "CURP del alumno",
+                        "type": "string",
+                        "example": "TORM770826MQTRMG65"
+                    },
+                    "email": {
+                        "title": "Email",
+                        "description": "Email del alumno",
+                        "type": "string",
+                        "example": "jhon@example.com"
+                    },
+                    "created_at": {
+                        "title": "Created At",
+                        "description": "Fecha de creación del alumno",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "04-03-2023 12:00:00"
+                    },
+                    "updated_at": {
+                        "title": "Updated At",
+                        "description": "Fecha de edición del alumno",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "04-03-2023 12:00:00"
+                    }
+                },
+                "type": "object"
+            },
+            "ProfesorDTO": {
+                "title": "Profesores",
+                "description": "Profesor model",
+                "properties": {
+                    "id": {
+                        "title": "ID profesor",
+                        "description": "ID del profesor",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "nombre": {
+                        "title": "Nombre",
+                        "description": "Nombre del profesor",
+                        "type": "string",
+                        "example": "Jhon"
+                    },
+                    "apellido_paterno": {
+                        "title": "Apellido Paterno",
+                        "description": "Apellido Paterno del profesor",
+                        "type": "string",
+                        "example": "Perez"
+                    },
+                    "apellido_materno": {
+                        "title": "Apellido Marterno",
+                        "description": "Apellido Materno del profesor",
+                        "type": "string",
+                        "example": "Perez"
+                    },
+                    "curp": {
+                        "title": "CURP",
+                        "description": "CURP del profesor",
+                        "type": "string",
+                        "example": "TORM770826MQTRMG65"
+                    },
+                    "email": {
+                        "title": "Email",
+                        "description": "Email del profesor",
+                        "type": "string",
+                        "example": "jhon@example.com"
+                    },
+                    "created_at": {
+                        "title": "Created At",
+                        "description": "Fecha de creación del horario",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "04-03-2023 12:00:00"
+                    },
+                    "updated_at": {
+                        "title": "Updated At",
+                        "description": "Fecha de edición del horario",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "04-03-2023 12:00:00"
+                    }
+                },
+                "type": "object"
+            },
+            "PaginadorDTO": {
+                "title": "Paginador",
+                "properties": {
+                    "current_page": {
+                        "title": "Pagina Actual",
+                        "description": "Página actual",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "data": {
+                        "title": "Datos",
+                        "description": "Datos que se obtenieron",
+                        "type": "array",
+                        "items": {
+                            "oneOf": [
+                                {
+                                    "$ref": "#/components/schemas/ProfesorDTO"
+                                }
+                            ]
+                        }
+                    },
+                    "first_page_url": {
+                        "title": "URL ",
+                        "description": "Url de la primera página",
+                        "type": "string"
+                    },
+                    "from": {
+                        "type": "integer"
+                    },
+                    "last_page": {
+                        "type": "integer"
+                    },
+                    "last_page_url": {
+                        "type": "string"
+                    },
+                    "links": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/LinkPaginador"
+                        }
+                    },
+                    "next_page_url": {
+                        "type": "string"
+                    },
+                    "path": {
+                        "type": "string"
+                    },
+                    "per_page": {
+                        "type": "integer"
+                    },
+                    "prev_page_url": {
+                        "type": "string"
+                    },
+                    "to": {
+                        "type": "integer"
+                    },
+                    "total": {
+                        "type": "integer"
+                    }
+                },
+                "type": "object"
+            },
+            "LinkPaginador": {
+                "title": "LinkPaginador",
+                "properties": {
+                    "url": {
+                        "type": "string"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "active": {
+                        "type": "boolean"
+                    }
+                },
+                "type": "object"
+            },
+            "CredencialesUsuario": {
+                "title": "Credenciales Usuario",
+                "description": "Credenciales del usuario necesarias para poder iniciar sesión.",
+                "properties": {
+                    "email": {
+                        "title": "Email",
+                        "description": "Email",
+                        "type": "string"
+                    },
+                    "password": {
+                        "title": "Password",
+                        "description": "Password",
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            }
+        },
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Cuentas",
+            "description": "Todo sobre las cuentas"
+        },
+        {
+            "name": "Profesores",
+            "description": "Todo sobre los profesores"
+        },
+        {
+            "name": "Asesorias",
+            "description": "Todo sobre las asesorias"
+        }
+    ]
+}

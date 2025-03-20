@@ -1,0 +1,12 @@
+
+/** Botones */
+
+.btn-responsive {
+    width: 100%;
+}
+
+@media (min-width: 576px) {
+    .btn-responsive {
+        width: auto;
+    }
+}
