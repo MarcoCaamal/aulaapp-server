@@ -362,7 +362,7 @@ class UserRepository
      */
     public function obtenerUsuarioPorEmail(string $email): \Illuminate\Database\Eloquent\Model|User
     {
-        return $this->model->where('email', $email)->first();
+        return $this->model->with('roles')->where('email', $email)->first();
     }
 
     /**

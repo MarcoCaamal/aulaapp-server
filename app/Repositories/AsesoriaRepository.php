@@ -56,7 +56,7 @@ class AsesoriaRepository
                             ->where('horarios.hora_inicio', '>', $hoy->toTimeString());
                     });
             })
-            ->select('asesoria.*');
+            ->select('asesorias.*');
 
         $resultado['total'] = $sql->count();
 

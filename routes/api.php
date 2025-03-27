@@ -39,6 +39,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
         //     Route::get('/profesores/{id}', 'getById')->name('api.profesores.getById');
         // });
 
+        Route::controller(APIAsesoriaController::class)->group(function() {
+            Route::get('/asesorias/{id}');
+        });
+
         // API DE FOROS
         Route::controller(APIForoController::class)->group(function () {
             Route::get('/foros', 'index');

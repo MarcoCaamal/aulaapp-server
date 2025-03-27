@@ -484,6 +484,9 @@ class UserService implements UserServiceInterface
 		$userDTO->id = $user->id;
 		$userDTO->nombre = $user->getFullName();
 		$userDTO->curp = $user->curp;
+		foreach ($user->roles as $role) {
+			$userDTO->roles[] = $role->name;
+		}
 		return $userDTO;
 	}
 	/**

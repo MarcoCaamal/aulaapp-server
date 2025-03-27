@@ -50,19 +50,23 @@ class APICuentaController extends Controller
 
         if($user->hasRole('Profesor')) {
             return response()->json([
-                'token' => $user->createToken('token', ['profesor'])->plainTextToken,
                 'success' => true,
                 'message' => '¡Login Correcto!',
-                'user' => $userDTO,
+                'data' => [
+                    'user' => $userDTO,
+                    'token' => $user->createToken('token', ['profesor'])->plainTextToken,
+                ]
             ]);
         }
 
         if($user->hasRole('Alumno')) {
             return response()->json([
-                'token' => $user->createToken('token', ['alumno'])->plainTextToken,
                 'success' => true,
                 'message' => '¡Login Correcto!',
-                'user' => $userDTO,
+                'data' => [
+                    'user' => $userDTO,
+                    'token' => $user->createToken('token', ['alumno'])->plainTextToken,
+                ]
             ]);
         }
 
