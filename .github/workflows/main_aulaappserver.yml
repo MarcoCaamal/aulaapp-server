@@ -1,4 +1,4 @@
-name: Deploy Laravel to Azure
+name: Deploy Laravel App
 
 on:
   push:
@@ -10,45 +10,63 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 🛠️ Checkout del repositorio
-        uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-      - name: 🚀 Instalar dependencias necesarias
-        run: sudo apt update && sudo apt install -y rsync openssh-client
+      - name: Install Dependencies
+        run: sudo apt-get update && sudo apt-get install -y openssh-client rsync git
 
-      - name: 🔑 Configurar SSH
+      - name: Set up SSH Key
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > deploy_key
+          chmod 600 deploy_key
 
-      - name: 🔗 Cambiar permisos antes del deploy
+      - name: Change Permissions on Server
         run: |
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "sudo chown -R ${{ secrets.SSH_USER }}:${{ secrets.SSH_USER }} /var/www/html"
+          ssh -i deploy_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "sudo chown -R ${{ secrets.SSH_USER }}:${{ secrets.SSH_USER }} /var/www/html"
 
-      - name: 📂 Sincronizar archivos al servidor (excluyendo carpetas sensibles)
+      - name: Deploy Code with Rsync
         run: |
           rsync -avz --delete \
-            --exclude 'public/assets' \
-            --exclude 'storage' \
-            --exclude 'bootstrap' \
-            --exclude '.env' \
-            --exclude 'vendor' \
-            --exclude 'node_modules' \
-            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
-            ./ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/var/www/html
+          --exclude 'public/assets' \
+          --exclude 'storage' \
+          --exclude 'bootstrap' \
+          --exclude '.env' \
+          --exclude 'vendor' \
+          --exclude 'node_modules' \
+          -e "ssh -i deploy_key -o StrictHostKeyChecking=no" ./ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/var/www/html
 
-      - name: 🎼 Ejecutar Composer
+      - name: Install Composer Dependencies
         run: |
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd /var/www/html && composer update --no-dev --optimize-autoloader --ignore-platform-reqs"
+          ssh -i deploy_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "
+          cd /var/www/html &&
+          composer install --no-dev --optimize-autoloader --ignore-platform-reqs
+          "
 
-      - name: ⚡ Optimizar Laravel
+      - name: Run Laravel Optimization Commands
         run: |
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd /var/www/html && php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan optimize"
+          ssh -i deploy_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "
+          cd /var/www/html &&
+          php artisan config:clear &&
+          php artisan route:clear &&
+          php artisan cache:clear &&
+          php artisan view:clear &&
+          php artisan config:cache &&
+          php artisan route:cache &&
+          php artisan view:cache &&
+          php artisan optimize
+          "
 
-      - name: 🔧 Ajustar permisos de Laravel
+      - name: Set Correct Permissions
         run: |
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "sudo chown -R www-data:www-data /var/www/html"
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "sudo find /var/www/html -type d -exec chmod g+s {} \\;"
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "sudo chmod -R 775 /var/www/html"
+          ssh -i deploy_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "
+          sudo chown -R www-data:www-data /var/www/html &&
+          sudo find /var/www/html -type d -exec chmod g+s {} \; &&
+          sudo chmod -R 775 /var/www/html
+          "
+
+      - name: Restart Web Server (Apache or Nginx)
+        run: |
+          ssh -i deploy_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "
+          sudo systemctl restart apache2 || sudo systemctl restart nginx
+          "
