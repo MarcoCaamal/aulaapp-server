@@ -30,7 +30,6 @@ jobs:
           rsync -avz --delete \
           --exclude 'public/assets' \
           --exclude 'storage' \
-          --exclude 'bootstrap' \
           --exclude '.env' \
           --exclude 'vendor' \
           --exclude 'node_modules' \
