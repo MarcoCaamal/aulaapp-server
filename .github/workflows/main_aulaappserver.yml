@@ -67,7 +67,7 @@ jobs:
         run: |
           ssh -i deploy_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} '
             cd /var/www/html &&
-            printf "%b" "${{ secrets.ENV_VARIABLES }}" > .env
+            echo '"'"'${{ secrets.ENV_VARIABLES }}'"'"' > .env
           '
 
       - name: Set Correct Permissions
