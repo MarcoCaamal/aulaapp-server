@@ -56,7 +56,7 @@ jobs:
           php artisan optimize && echo 'Optimization done'
           "
 
-        - name: Run Vite Build
+      - name: Run Vite Build
         run: |
           ssh -i deploy_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "
           cd /var/www/html &&
