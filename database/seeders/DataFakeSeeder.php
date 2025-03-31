@@ -6,18 +6,14 @@ use App\Enums\EstatusAsesoriaEnum;
 use App\Enums\EstatusAsistenciaEnum;
 use App\Models\Asesoria;
 use App\Models\Asistencia;
-use App\Models\MateriaAsesor;
-use App\Models\User;
 use App\Models\Ciclo;
 use App\Models\Grupo;
 use App\Models\Horario;
 use App\Models\Materia;
-use Illuminate\Support\Carbon;
+use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Models\Role;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
 use function PHPUnit\Framework\isTrue;
 
@@ -137,9 +133,9 @@ class DataFakeSeeder extends Seeder
     {
         /** CICLOS **/
         $ciclo = Ciclo::create([
-            'nombre' => 'CICLO 2023',
-            'fecha_inicio' => '2023-02-01',
-            'fecha_fin' => '2023-06-28',
+            'nombre' => 'CICLO ' . Carbon::now()->year,
+            'fecha_inicio' => Carbon::now()->toDateString(),
+            'fecha_fin' => Carbon::now()->addYear()->toDateString(),
             'is_activo' => true
         ]);
     }

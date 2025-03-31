@@ -24,7 +24,7 @@ interface UserServiceInterface
 	// USERS
 	public function obtenerUsuarioPorId(int $id): \Illuminate\Database\Eloquent\Model|User;
 	public function obtenerUsuarioPorEmail(string $email): \Illuminate\Database\Eloquent\Model|User;
-	public function getAuthenticatedUserByBearerToken(): User;
+	public function getAuthenticatedUserByBearerToken(): ?User;
 	public function eliminar(int $id): ResponseHelper;
 	public function mapUserToUserDTO(User $user): UserDTO;
 	public function verificarAsesoriaYaConfirmada(int $asesoriaId, int $alumnoId): bool;

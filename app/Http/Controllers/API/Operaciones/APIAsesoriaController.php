@@ -2,651 +2,184 @@
 
 namespace App\Http\Controllers\API\Operaciones;
 
-use App\Enums\TurnoEnum;
-use App\Helpers\ResponseHelper;
+use App\Enums\EstatusAsesoriaEnum;
+use App\Enums\EstatusAsistenciaEnum;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\API\GetAllAsesoriasDisponiblesRequest;
-use App\Models\DTOs\Paginacion\PaginadorDTO;
+use App\Models\Asesoria;
 use App\Services\Interfaces\UserServiceInterface;
-use App\Services\Interfaces\AsesoriaServiceInterface;
-use App\Services\Interfaces\GrupoServiceInterface;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
-use OpenApi\Attributes as OAT;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Storage;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class APIAsesoriaController extends Controller
 {
-    private UserServiceInterface $userService;
-    private AsesoriaServiceInterface $asesoriaService;
-    private GrupoServiceInterface $grupoService;
     public function __construct(
-        UserServiceInterface $userService, AsesoriaServiceInterface $asesoriaService,
-        GrupoServiceInterface $grupoService
-    ) {
-        $this->userService = $userService;
-        $this->asesoriaService = $asesoriaService;
-        $this->grupoService = $grupoService;
-    }
-
-    #[OAT\Get(
-        path: '/api/alumnos/{idAlumno}/asesorias-confirmadas',
-        tags: ['Asesorias'],
-        summary: 'Obtener Asesorias Confirmadas',
-        description: 'Devuelve las asesorias confirmadas del alumno',
-        operationId: 'GetAllConfirmadas',
-        parameters: [
-            new OAT\Parameter(
-                description: 'ID del alumno',
-                in: 'path',
-                name: 'idAlumno',
-                required: true,
-                schema: new OAT\Schema(
-                    type: 'integer',
-                    format: 'int64'
-                )
-            ),
-            new OAT\Parameter(
-                description: 'Numero de página que por defecto es la 1',
-                in: 'query',
-                name: 'page',
-                required: false,
-                schema: new OAT\Schema(
-                    type: 'integer',
-                    format: 'int64',
-                    default: 1
-                )
-            )
-        ],
-        responses: [
-            new OAT\Response(
-                response: 200,
-                description: 'Ok',
-                content: new OAT\JsonContent(
-                    ref: PaginadorDTO::class
-                )
-            ),
-            new OAT\Response(
-                response: 401,
-                description: 'Unauthorized',
-            )
-        ],
-        security: [
-            [
-                'bearerAuth' => []
-            ]
-        ]
-    )]
-    public function getConfirmadasAlumno(int $idAlumno, Request $request)
+        private UserServiceInterface $_userService
+    )
     {
-        $userAuth = $this->userService->getAuthenticatedUserByBearerToken();
-        $paginaActual = $request->query('page') ?? 1;
+        $this->_userService = $_userService;
+    }
+    public function index()
+    {
+        $user = $this->_userService->getAuthenticatedUserByBearerToken();
+        if(!$user) {
+            abort(401);
+        }
+        $userRoles = $user->roles()->get();
 
-        if ($userAuth->getKey() !== $idAlumno) {
-            abort(404);
+        if($userRoles->some('name', '=', 'Alumno')) {
+            return Asesoria::with(['horario' => ['profesor', 'materia']])
+            ->whereHas('asistencias', function(Builder $query) use($user) {
+                $query->where('alumno_id', '=', $user->id);
+            })
+            ->paginate();
         }
 
-        $asesorias = $this->asesoriaService
-            ->obtenerColeccionConfirmadosPorAlumnoId($userAuth->getKey(), $paginaActual);
-
-        return $asesorias;
-    }
-
-    #[OAT\Get(
-        path: '/api/asesorias/horarios-disponibles',
-        tags: ['Asesorias'],
-        summary: 'Obtener Asesorias Disponibles para el alumno',
-        description: 'Devuelve las asesorias disponibles para el alumno',
-        operationId: 'GetAllDisponibles',
-        parameters: [
-            new OAT\Parameter(
-                description: 'Filtrar por Hora de Inicio',
-                in: 'query',
-                name: 'horaInicio',
-                required: false,
-                schema: new OAT\Schema(
-                    type: 'string',
-                    format: 'date'
-                )
-            ),
-            new OAT\Parameter(
-                description: 'Filtrar por Hora de Fin',
-                in: 'query',
-                name: 'horaFin',
-                required: false,
-                schema: new OAT\Schema(
-                    type: 'string',
-                    format: 'date'
-                )
-            ),
-            new OAT\Parameter(
-                description: 'Filtrar por nombre del profesor',
-                in: 'query',
-                name: 'nombre',
-                required: false,
-                schema: new OAT\Schema(
-                    type: 'string'
-                )
-            ),
-            new OAT\Parameter(
-                description: 'Filtrar por turno (0 = Matutino, 1 = Vespertino)',
-                in: 'query',
-                name: 'turno',
-                required: false,
-                style: 'form',
-                schema: new OAT\Schema(
-                    ref: TurnoEnum::class
-                )
-            ),
-            new OAT\Parameter(
-                description: 'Número de la página actual que por defecto es 1',
-                in: 'query',
-                name: 'page',
-                required: false,
-                schema: new OAT\Schema(
-                    type: 'integer',
-                    format: 'int64',
-                    default: 1
-                )
-            )
-        ],
-        responses: [
-            new OAT\Response(
-                response: 200,
-                description: 'Ok',
-                content: new OAT\JsonContent(
-                    ref: PaginadorDTO::class
-                )
-            ),
-            new OAT\Response(
-                response: 401,
-                description: 'Unauthorized',
-            )
-        ],
-        security: [
-            [
-                'bearerAuth' => []
-            ]
-        ]
-    )]
-    public function getAllDisponibles(GetAllAsesoriasDisponiblesRequest $request)
-    {
-        $request->validated();
-        $filtros = $request->query();
-        $paginaActual = $request->query('page') ?? 1;
-        $userAuth = $this->userService->getAuthenticatedUserByBearerToken();
-
-        $result = $this->asesoriaService
-            ->obtenerPaginacionHorariosAsesoriasPorFiltrosAlumnoId(
-                $userAuth->getKey(),
-                $filtros,
-                $paginaActual
-            );
-
-        return response()->json($result);
-    }
-    #[OAT\Get(
-        path: '/api/asesorias/horarios-disponibles/cantidad-por-turnos',
-        tags: ['Asesorias'],
-        summary: 'Obtener Cantidad de Asesorias Disponibles por Turnos.',
-        description: 'Devuelve el número de asesorias disponibles para el alumno por turnos.',
-        operationId: 'GetCantidadAsesoriasDisponiblesPorTurnos',
-        responses: [
-            new OAT\Response(
-                response: 200,
-                description: 'Ok',
-                content: new OAT\JsonContent(
-                    properties: [
-                        new OAT\Property(
-                            property: 'matutinos',
-                            type: 'integer',
-                            format: 'int64'
-                        ),
-                        new OAT\Property(
-                            property: 'vespertinos',
-                            type: 'integer',
-                            format: 'int64'
-                        )
-                    ]
-                )
-            ),
-            new OAT\Response(
-                response: 401,
-                description: 'Unauthorized',
-            )
-        ],
-        security: [
-            [
-                'bearerAuth' => []
-            ]
-        ]
-    )]
-    public function getCountPorTurnos()
-    {
-        $userAuth = $this->userService->getAuthenticatedUserByBearerToken();
-        $grupoActualAlumno = $this->grupoService->obtenerGrupoActualAlumnoPorIdAlumno($userAuth->getKey());
-
-        if (!$grupoActualAlumno) {
-            return response()->json([
-                'message' => __('messages.users.alumno_without_group'),
-                'success' => false,
-                'statusCode' => 400
-            ], 400);
+        if($userRoles->some('name', '=', 'Profesor')) {
+            return Asesoria::with(['horario' => ['profesor', 'materia']])
+            ->where('estado', '=', EstatusAsesoriaEnum::PENDIENTE)
+            ->whereHas('horario', function(Builder $query) use($user) {
+                $query->where('profesor_id', '=', $user->id);
+            })
+            ->paginate();
         }
 
-        $response = $this->asesoriaService->obtenerCountMatutinosVespertinos($grupoActualAlumno->semestre_id);
-
-        return response()->json($response);
+        return Asesoria::with(['horario' => ['profesor', 'materia']])->paginate();
     }
-    #[OAT\Get(
-        path: '/api/profesores/{profesorId}/asesorias/finalizadas',
-        tags: ['Asesorias'],
-        summary: 'Obtener lista paginada de asesorias finalizadas del profesor.',
-        description: 'Devuelve una lista paginada de las asesorias finalizadas del profesor.',
-        operationId: 'GetAllFinalizadasProfesor',
-        parameters: [
-            new OAT\Parameter(
-                description: 'ID del profesor',
-                in: 'path',
-                name: 'profesorId',
-                required: true,
-                schema: new OAT\Schema(
-                    type: 'integer',
-                    format: 'int64'
-                )
-            ),
-            new OAT\Parameter(
-                description: 'Número de la página actual que por defecto es 1',
-                in: 'query',
-                name: 'page',
-                required: false,
-                schema: new OAT\Schema(
-                    type: 'integer',
-                    format: 'int64',
-                    default: 1
-                )
-            )
-        ],
-        responses: [
-            new OAT\Response(
-                response: 200,
-                description: 'Ok',
-                content: new OAT\JsonContent(
-                    ref: PaginadorDTO::class
-                )
-            ),
-            new OAT\Response(
-                response: 401,
-                description: 'Unauthorized',
-            )
-        ],
-        security: [
-            [
-                'bearerAuth' => []
-            ]
-        ]
-    )]
-    public function getAllFinalizadasProfesor(int $profesorId, Request $request)
+    public function show(int $id)
     {
-        $userAuth = $this->userService->getAuthenticatedUserByBearerToken();
-        $paginaActual = $request->query('page') ?? 1;
+        $user = $this->_userService->getAuthenticatedUserByBearerToken();
+        if(!$user) {
+            abort(401);
+        }
+        $userRoles = $user->roles()->get();
 
-        if ($userAuth->getKey() !== $profesorId) {
-            abort(404);
+        if($userRoles->some('name', '=', 'Alumno')) {
+            return Asesoria::with(['horario' => ['profesor', 'materia']])
+            ->whereHas('asistencias', function(Builder $query) use($user) {
+                $query->where('alumno_id', '=', $user->id);
+            })
+            ->where('id', '=', $id)
+            ->limit(1)
+            ->paginate();
         }
 
-        $response = $this->asesoriaService
-            ->obtenerPaginacionFinalizadasAsesorPorProfesorId($profesorId, $paginaActual);
+        if($userRoles->some('name', '=', 'Profesor')) {
+            return Asesoria::with(['horario' => ['profesor', 'materia']])
+            ->whereHas('horario', function(Builder $query) use($user) {
+                $query->where('profesor_id', '=', $user->id);
+            })
+            ->where('id', '=', $id)
+            ->paginate();
+        }
 
-        return response()->json($response);
+        return Asesoria::with(['horario' => ['profesor', 'materia']])
+            ->where('id', '=', $id)
+            ->paginate();;
     }
-    #[OAT\Get(
-        path: '/api/profesores/{profesorId}/asesorias-confirmadas',
-        tags: ['Asesorias'],
-        summary: 'Obtener lista paginada de asesorias confirmadas de un profesor.',
-        description: 'Devuelve una lista paginada de las asesorias confirmadas de un profesor.',
-        operationId: 'GetAllConfirmadasProfesor',
-        parameters: [
-            new OAT\Parameter(
-                description: 'ID del profesor',
-                in: 'path',
-                name: 'profesorId',
-                required: true,
-                schema: new OAT\Schema(
-                    type: 'integer',
-                    format: 'int64'
-                )
-            ),
-            new OAT\Parameter(
-                description: 'Número de la página actual que por defecto es 1',
-                in: 'query',
-                name: 'page',
-                required: false,
-                schema: new OAT\Schema(
-                    type: 'integer',
-                    format: 'int64',
-                    default: 1
-                )
-            )
-        ],
-        responses: [
-            new OAT\Response(
-                response: 200,
-                description: 'Ok',
-                content: new OAT\JsonContent(
-                    ref: PaginadorDTO::class
-                )
-            ),
-            new OAT\Response(
-                response: 401,
-                description: 'Unauthorized',
-            )
-        ],
-        security: [
-            [
-                'bearerAuth' => []
-            ]
-        ]
-    )]
-    public function getAllConfirmadasProfesor(int $profesorId, Request $request)
+    public function store(Request $request) {
+        
+    }
+    public function qr(int $id, Request $request)
     {
-        $userAuth = $this->userService->getAuthenticatedUserByBearerToken();
-        $paginaActual = $request->query('page') ?? 1;
-        if($userAuth->getKey() !== $profesorId) {
-            abort(404);
+        $user = $this->_userService->getAuthenticatedUserByBearerToken();
+        if (!$user) {
+            abort(401);
         }
 
-        $response = $this->asesoriaService
-            ->obtenerPaginacionConfirmadasAsesorPorProfesorId($profesorId, $paginaActual);
+        $userRoles = $user->roles()->get();
 
-        return response()->json($response);
+        // Verificar si el usuario tiene el rol de Profesor
+        if (!$userRoles->some('name', '=', 'Profesor')) {
+            abort(401);
+        }
+
+        // Validar si la asesoría existe
+        $asesoria = Asesoria::findOrFail($id);
+
+        // Obtener el tiempo de expiración en minutos desde la solicitud o establecer un valor por defecto
+        $expiracion = $request->input('expiracion', 60); // El valor puede venir en la solicitud, sino 60 por defecto
+        $fechaGeneracion = now()->toDateTimeString();
+
+        // Crear el texto a encriptar
+        $texto = "{$id}|{$fechaGeneracion}|{$expiracion}";
+
+        // Encriptar la información
+        $textoEncriptado = Crypt::encryptString($texto);
+
+        // Generar el código QR con el texto encriptado
+        $qrCode = QrCode::format('png')->size(300)->generate($textoEncriptado);
+
+        // Guardar el QR en un archivo en el servidor
+        $qrPath = "qrs/asesoria_$asesoria->id.png";
+        Storage::put($qrPath, $qrCode);
+
+        // Obtener la URL completa del servidor para el archivo generado
+        $qrUrl = Storage::url("qrs/asesoria_$asesoria->id.png");
+
+        // Devolver la URL completa del QR generado
+        return response()->json(['qr_url' => $qrUrl]);
     }
-    #[OAT\Get(
-        path: '/api/profesores/{profesorId}/asesorias-confirmadas/{asesoriaId}/lista-alumnos',
-        tags: ['Asesorias'],
-        summary: 'Obtener lista paginada de alumnos que tienen confirmada su asistencia a una asesoria.',
-        description: 'Devuelve una lista paginada de los alumnos que tiene una asistencia confirmada a la asesoria confirmada.',
-        operationId: 'GetListaALumnosAsesoria',
-        parameters: [
-            new OAT\Parameter(
-                description: 'ID del profesor',
-                in: 'path',
-                name: 'profesorId',
-                required: true,
-                schema: new OAT\Schema(
-                    type: 'integer',
-                    format: 'int64'
-                )
-                ),
-                new OAT\Parameter(
-                    description: 'ID de la asesoria confirmada',
-                    in: 'path',
-                    name: 'asesoriaId',
-                    required: true,
-                    schema: new OAT\Schema(
-                        type: 'integer',
-                        format: 'int64'
-                    )
-                ),
-                new OAT\Parameter(
-                    description: 'Número de la página actual que por defecto es 1',
-                    in: 'query',
-                    name: 'page',
-                    required: false,
-                    schema: new OAT\Schema(
-                        type: 'integer',
-                        format: 'int64',
-                        default: 1
-                    )
-                )
-        ],
-        responses: [
-            new OAT\Response(
-                response: 200,
-                description: 'Ok',
-                content: new OAT\JsonContent(
-                    ref: PaginadorDTO::class
-                )
-            ),
-            new OAT\Response(
-                response: 401,
-                description: 'Unauthorized',
-            )
-        ],
-        security: [
-            [
-                'bearerAuth' => []
-            ]
-        ]
-    )]
-    public function getListaAlumnosAsesoria(int $profesorId, int $asesoriaId,
-        Request $request)
+
+    public function updateQr(int $id, Request $request)
     {
-        $userAuth = $this->userService->getAuthenticatedUserByBearerToken();
-        $paginaActual = $request->query('page') ?? 1;
-
-        if($userAuth->getKey() !== $profesorId) {
-            abort(404);
+        $response = [
+            'success' => false,
+            'statusCode' => 500,
+            'message' => 'algo salio mal',
+        ];
+        $user = $this->_userService->getAuthenticatedUserByBearerToken();
+        if (!$user) {
+            abort(401);
         }
 
-        $response = $this->asesoriaService
-            ->obtenerPaginacionListaAlumnosAsesoriaPorAsesoriaId(
-            $asesoriaId,
-            $paginaActual);
+        // Verificar que el rol del usuario es "Alumno"
+        if (!$user->roles()->where('name', 'Alumno')->exists()) {
+            $response['message'] = 'Unauthorized';
+            $response['statusCode'] = 401;
+            return response()->json($response, 401);
+        }
 
-        return response()->json($response);
+        // Verificar si la asesoría existe
+        $asesoria = Asesoria::findOrFail($id);
+
+        // Verificar si el alumno ya ha confirmado su asistencia
+        $asistenciaExistente = $asesoria->asistencias()
+            ->where('alumno_id', $user->id)
+            ->firstOrFail();
+        if ($asistenciaExistente->estatus == EstatusAsistenciaEnum::ASISTENCIA) {
+            $response['message'] = 'Asistencia ya confirmada';
+            $response['statusCode'] = 400;
+            return response()->json($response, 400);
+        }
+
+        // Desencriptar el código QR
+        try {
+            $textoEncriptado = $request->input('qr_code');  // El QR encriptado enviado en el body de la solicitud
+            $textoDescifrado = Crypt::decryptString($textoEncriptado);
+            list($asesoriaId, $fechaGeneracion, $expiracion) = explode('|', $textoDescifrado);
+
+            // Verificar que el id de la asesoría del QR coincida con el id recibido
+            if ($asesoriaId != $id) {
+                $response['message'] = 'El QR no corresponde con la asesoría';
+                return response()->json($response, 400);
+            }
+
+            // Verificar que la fecha no haya expirado
+            $fechaExpiracion = \Carbon\Carbon::parse($fechaGeneracion)->addMinutes($expiracion);
+            if ($fechaExpiracion->isPast()) {
+                $response['message'] = 'El QR ha expirado';
+                $response['statusCode'] = 400;
+                return response()->json($response, 400);
+            }
+
+            $asistenciaExistente->estatus = EstatusAsistenciaEnum::ASISTENCIA;
+
+            return response()->json(['message' => 'Asistencia confirmada correctamente'], 200);
+        } catch (\Exception $e) {
+            return response()->json($response, 400);
+        }
     }
-    #[OAT\Post(
-        path: '/api/alumnos/{alumnoId}/horarios-disponibles/{horarioId}/agendar',
-        tags: ['Asesorias'],
-        summary: 'Agenda una asesoria',
-        description: 'El alumno agenda una asesoria al la cual quiere asistir. Devuelve una objeto con la respuesta de que si la asesoria se agendo con exito o hubo errores.',
-        operationId: 'PostAgendarAsesoriaAlumno',
-        parameters: [
-            new OAT\Parameter(
-                description: 'ID del alumno que quiere agendar una asesoria',
-                in: 'path',
-                name: 'alumnoId',
-                required: true,
-                schema: new OAT\Schema(
-                    type: 'integer',
-                    format: 'int64'
-                )
-            ),
-            new OAT\Parameter(
-                description: 'ID del horario de la asesoria a agendar',
-                in: 'path',
-                name: 'horarioId',
-                required: true,
-                schema: new OAT\Schema(
-                    type: 'integer',
-                    format: 'int64'
-                )
-            ),
-        ],
-        responses: [
-            new OAT\Response(
-                response: 200,
-                description: 'Ok',
-                content: new OAT\JsonContent(
-                    ref: ResponseHelper::class
-                )
-            ),
-            new OAT\Response(
-                response: 401,
-                description: 'Unauthorized',
-            )
-        ],
-        requestBody: new OAT\RequestBody(
-            content: new OAT\JsonContent(
-                properties: [
-                    new OAT\Property(
-                        property: 'fecha',
-                        type: 'string',
-                        format: 'date'
-                    )
-                ]
-            )
-        ),
-        security: [
-            [
-                'bearerAuth' => []
-            ]
-        ]
-    )]
-    public function postAgendarAlumno(Request $request, int $alumnoId, int $horarioId)
-    {
-        $request->validate([
-            'fecha' => ['nullable', 'date_format:Y-m-d']
-        ]);
-
-        $userAuth = $this->userService->getAuthenticatedUserByBearerToken();
-
-        if ($userAuth->getKey() !== $alumnoId) {
-            abort(404);
-        }
-
-        $attributes = [];
-        if ($request->fecha !== null) {
-            $attributes['fecha'] = $request->fecha;
-        }
-        $attributes['horario_id'] = $horarioId;
-        $attributes['alumno_id'] = $alumnoId;
-
-        $response = $this->asesoriaService->crear($attributes);
-
-        return response()->json($response, $response->statusCode);
-    }
-    #[OAT\Put(
-        path: '/api/alumnos/{alumnoId}/asesorias-confirmadas/{asesoriaId}/cancelar',
-        tags: ['Asesorias'],
-        summary: 'Cancela la una asesoria confirmada del alumno',
-        description: 'Cancela la asesoria a la cual el alumno yo quiere asistir. El método devuelve una respuesta de que si la operación fue correcta o algo salio mal.',
-        operationId: 'putCancelarAsesoriaConfirmadaAlumno',
-        parameters: [
-            new OAT\Parameter(
-                description: 'ID del alumno que quiere cancelar una asistencia a una asesoria',
-                in: 'path',
-                name: 'alumnoId',
-                required: true,
-                schema: new OAT\Schema(
-                    type: 'integer',
-                    format: 'int64'
-                )
-            ),
-            new OAT\Parameter(
-                description: 'ID de la asesoria confirmada a cancelar',
-                in: 'path',
-                name: 'asesoriaId',
-                required: true,
-                schema: new OAT\Schema(
-                    type: 'integer',
-                    format: 'int64'
-                )
-            ),
-        ],
-        responses: [
-            new OAT\Response(
-                response: 200,
-                description: 'Ok',
-                content: new OAT\JsonContent(
-                    ref: ResponseHelper::class
-                )
-            ),
-            new OAT\Response(
-                response: 401,
-                description: 'Unauthorized',
-            )
-        ],
-        requestBody: new OAT\RequestBody(
-            content: new OAT\JsonContent(
-                properties: [
-                    new OAT\Property(
-                        property: 'justificacion',
-                        type: 'string',
-                    )
-                ]
-            )
-        ),
-        security: [
-            [
-                'bearerAuth' => []
-            ]
-        ]
-    )]
-    public function putCancelarAsesoriaAlumno(int $alumnoId, int $asesoriaId, Request $request)
-    {
-        $request->validate([
-            'justificacion' => ['required', 'string', 'max:500']
-        ]);
-        $userAuth = $this->userService->getAuthenticatedUserByBearerToken();
-
-        if ($userAuth->getKey() !== $alumnoId) {
-            abort(404);
-        }
-
-        $response = $this->asesoriaService
-            ->cancelarAsesoriaConfirmadaAlumno($alumnoId, $asesoriaId, $request->justificacion);
-
-        return response()->json($response, $response->statusCode);
-    }
-    #[OAT\Put(
-        path: '/api/profesores/{profesorId}/asesorias-confirmadas/{asesoriaId}/cancelar',
-        tags: ['Asesorias'],
-        summary: 'Cancela la una asesoria confirmada del alumno',
-        description: 'Cancela la asesoria a la cual el alumno yo quiere asistir. El método devuelve una respuesta de que si la operación fue correcta o algo salio mal.',
-        operationId: 'putCancelarAsesoriaConfirmadaAsesor',
-        parameters: [
-            new OAT\Parameter(
-                description: 'ID del profesor que quiere cancelar una asesoria',
-                in: 'path',
-                name: 'profesorId',
-                required: true,
-                schema: new OAT\Schema(
-                    type: 'integer',
-                    format: 'int64'
-                )
-            ),
-            new OAT\Parameter(
-                description: 'ID de la asesoria confirmada a cancelar',
-                in: 'path',
-                name: 'asesoriaId',
-                required: true,
-                schema: new OAT\Schema(
-                    type: 'integer',
-                    format: 'int64'
-                )
-            ),
-        ],
-        responses: [
-            new OAT\Response(
-                response: 200,
-                description: 'Ok',
-                content: new OAT\JsonContent(
-                    ref: ResponseHelper::class
-                )
-            ),
-            new OAT\Response(
-                response: 401,
-                description: 'Unauthorized',
-            )
-        ],
-        security: [
-            [
-                'bearerAuth' => []
-            ]
-        ]
-    )]
-    public function putCancelarAsesoriaProfesor(int $asesoriaId, int $profesorId)
-    {
-        $userAuth = $this->userService->getAuthenticatedUserByBearerToken();
-
-        if($userAuth->getKey() !== $profesorId) {
-            abort(404);
-        }
-
-        $response = $this->asesoriaService
-            ->cancelarAsesoriaConfirmadaAsesor($profesorId, $asesoriaId);
-
-        return response()->json($response, $response->statusCode);
-    }
-
 }

@@ -42,6 +42,7 @@ class APICuentaController extends Controller
         if($user->getKey() === null || !Hash::check($request->password, $user->password)) {
             return response()->json([
                 'success' => false,
+                'statusCode' => 400,
                 'message' => 'Las credenciales ingresadas son incorrectas.'
             ], 400);
         }
@@ -52,6 +53,7 @@ class APICuentaController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => '¡Login Correcto!',
+                'statusCode' => 200,
                 'data' => [
                     'user' => $userDTO,
                     'token' => $user->createToken('token', ['profesor'])->plainTextToken,
@@ -63,6 +65,7 @@ class APICuentaController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => '¡Login Correcto!',
+                'statusCode' => 200,
                 'data' => [
                     'user' => $userDTO,
                     'token' => $user->createToken('token', ['alumno'])->plainTextToken,
@@ -72,7 +75,20 @@ class APICuentaController extends Controller
 
         return response()->json([
             'success' => false,
+            'statusCode' => 400,
             'message' => '¡Login Incorrecto!'
-        ]);
+        ], 400);
+    }
+
+    public function usuario() {
+        $user = $this->userService->getAuthenticatedUserByBearerToken();
+        $user->load('roles');
+        
+        return [
+            'success' => true,
+            'message' => 'Usuario recuperado correctamente',
+            'statusCode' => 200,
+            'data' => $this->userService->mapUserToUserDTO($user)
+        ];
     }
 }

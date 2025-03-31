@@ -492,8 +492,8 @@ class UserService implements UserServiceInterface
 	/**
 	 * @return User
 	 */
-	public function getAuthenticatedUserByBearerToken(): User {
-		$user = new User();
+	public function getAuthenticatedUserByBearerToken(): ?User {
+		$user = null;
 		try {
 			$token = $this->request->bearerToken();
 			$user = PersonalAccessToken::findToken($token)->tokenable;

@@ -46,15 +46,22 @@ jobs:
         run: |
           ssh -i deploy_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "
           cd /var/www/html &&
-          php artisan config:clear &&
-          php artisan route:clear &&
-          php artisan cache:clear &&
-          php artisan view:clear &&
-          php artisan config:cache &&
-          php artisan route:cache &&
-          php artisan view:cache &&
-          php artisan optimize
+          php artisan config:clear && echo 'Config cache cleared' ||
+          php artisan route:clear && echo 'Route cache cleared' ||
+          php artisan cache:clear && echo 'Cache cleared' ||
+          php artisan view:clear && echo 'View cleared' ||
+          php artisan config:cache && echo 'Config cache cached' ||
+          php artisan route:cache && echo 'Route cache cached' ||
+          php artisan view:cache && echo 'View cache cached' ||
+          php artisan optimize && echo 'Optimization done'
           "
+
+      - name: Set Env Variables
+        run: |
+          ssh -i deploy_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} '
+            cd /var/www/html &&
+            echo "${{ secrets.ENV_VARIABLES }}" | tr -d "\r" >> .env
+          '
 
       - name: Set Correct Permissions
         run: |
