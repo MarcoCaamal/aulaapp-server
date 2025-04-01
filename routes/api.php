@@ -30,6 +30,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::controller(APIHorarioController::class)->group(function() {
         Route::get('/horarios', 'index');
         Route::get('/horarios/{id}', 'show');
-        Route::post('/horarios/{id}/asesoria', 'store');
+        Route::post('/horarios/{id}/asesorias', 'store');
     });
 });

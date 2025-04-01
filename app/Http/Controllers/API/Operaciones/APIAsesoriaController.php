@@ -6,7 +6,9 @@ use App\Enums\EstatusAsesoriaEnum;
 use App\Enums\EstatusAsistenciaEnum;
 use App\Http\Controllers\Controller;
 use App\Models\Asesoria;
+use App\Models\Asistencia;
 use App\Services\Interfaces\UserServiceInterface;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
@@ -30,7 +32,12 @@ class APIAsesoriaController extends Controller
         $userRoles = $user->roles()->get();
 
         if($userRoles->some('name', '=', 'Alumno')) {
-            return Asesoria::with(['horario' => ['profesor', 'materia']])
+            return Asesoria::with([
+                'horario' => ['profesor', 'materia'],
+                'asistencias' => function ($query) use ($user) {
+                    $query->where('alumno_id', $user->id);
+                }])
+            ->where('fecha', '>=', Carbon::now()->toDateString())
             ->whereHas('asistencias', function(Builder $query) use($user) {
                 $query->where('alumno_id', '=', $user->id);
             })
@@ -40,6 +47,7 @@ class APIAsesoriaController extends Controller
         if($userRoles->some('name', '=', 'Profesor')) {
             return Asesoria::with(['horario' => ['profesor', 'materia']])
             ->where('estado', '=', EstatusAsesoriaEnum::PENDIENTE)
+            ->where('fecha', '>=', Carbon::now()->toDateString())
             ->whereHas('horario', function(Builder $query) use($user) {
                 $query->where('profesor_id', '=', $user->id);
             })
@@ -58,6 +66,7 @@ class APIAsesoriaController extends Controller
 
         if($userRoles->some('name', '=', 'Alumno')) {
             return Asesoria::with(['horario' => ['profesor', 'materia']])
+            ->where('fecha', '>=', Carbon::now()->toDateString())
             ->whereHas('asistencias', function(Builder $query) use($user) {
                 $query->where('alumno_id', '=', $user->id);
             })
@@ -68,6 +77,7 @@ class APIAsesoriaController extends Controller
 
         if($userRoles->some('name', '=', 'Profesor')) {
             return Asesoria::with(['horario' => ['profesor', 'materia']])
+            ->where('fecha', '>=', Carbon::now()->toDateString())
             ->whereHas('horario', function(Builder $query) use($user) {
                 $query->where('profesor_id', '=', $user->id);
             })
@@ -125,6 +135,9 @@ class APIAsesoriaController extends Controller
 
     public function updateQr(int $id, Request $request)
     {
+        $request->validate([
+            'asistencia_id' => ['required', 'number']
+        ]);
         $response = [
             'success' => false,
             'statusCode' => 500,
@@ -146,8 +159,7 @@ class APIAsesoriaController extends Controller
         $asesoria = Asesoria::findOrFail($id);
 
         // Verificar si el alumno ya ha confirmado su asistencia
-        $asistenciaExistente = $asesoria->asistencias()
-            ->where('alumno_id', $user->id)
+        $asistenciaExistente = Asistencia::where('alumno_id', $user->id)
             ->firstOrFail();
         if ($asistenciaExistente->estatus == EstatusAsistenciaEnum::ASISTENCIA) {
             $response['message'] = 'Asistencia ya confirmada';
@@ -176,6 +188,7 @@ class APIAsesoriaController extends Controller
             }
 
             $asistenciaExistente->estatus = EstatusAsistenciaEnum::ASISTENCIA;
+            $asistenciaExistente->save();
 
             return response()->json(['message' => 'Asistencia confirmada correctamente'], 200);
         } catch (\Exception $e) {
