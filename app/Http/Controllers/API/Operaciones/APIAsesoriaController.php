@@ -159,7 +159,7 @@ class APIAsesoriaController extends Controller
         $asesoria = Asesoria::findOrFail($id);
 
         // Verificar si el alumno ya ha confirmado su asistencia
-        $asistenciaExistente = Asistencia::where('alumno_id', $user->id)
+        $asistenciaExistente = Asistencia::findOrFail($request->input('asistencia_id'))
             ->firstOrFail();
         if ($asistenciaExistente->estatus == EstatusAsistenciaEnum::ASISTENCIA) {
             $response['message'] = 'Asistencia ya confirmada';
@@ -180,7 +180,7 @@ class APIAsesoriaController extends Controller
             }
 
             // Verificar que la fecha no haya expirado
-            $fechaExpiracion = \Carbon\Carbon::parse($fechaGeneracion)->addMinutes($expiracion);
+            $fechaExpiracion = Carbon::parse($fechaGeneracion)->addMinutes($expiracion);
             if ($fechaExpiracion->isPast()) {
                 $response['message'] = 'El QR ha expirado';
                 $response['statusCode'] = 400;
