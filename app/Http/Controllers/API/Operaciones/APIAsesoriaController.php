@@ -133,10 +133,11 @@ class APIAsesoriaController extends Controller
         return response()->json(['qr_url' => $qrUrl]);
     }
 
-    public function updateQr(int $id, Request $request)
+    public function qrUpdate(int $id, Request $request)
     {
         $request->validate([
-            'asistencia_id' => ['required', 'number']
+            'asistencia_id' => ['required', 'number'],
+            'qrCode' => ['required']
         ]);
         $response = [
             'success' => false,
@@ -169,7 +170,7 @@ class APIAsesoriaController extends Controller
 
         // Desencriptar el código QR
         try {
-            $textoEncriptado = $request->input('qr_code');  // El QR encriptado enviado en el body de la solicitud
+            $textoEncriptado = $request->input('qrCode');  // El QR encriptado enviado en el body de la solicitud
             $textoDescifrado = Crypt::decryptString($textoEncriptado);
             list($asesoriaId, $fechaGeneracion, $expiracion) = explode('|', $textoDescifrado);
 

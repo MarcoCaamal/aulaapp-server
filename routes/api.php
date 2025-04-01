@@ -24,7 +24,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/asesorias/{id}', 'show');
         
         Route::post('/asesorias/{id}/qr', 'qr');
-        Route::put('/asesorias/{id}/qr', 'qr');
+        Route::put('/asesorias/{id}/qr', 'qrUpdate');
     });
 
     Route::controller(APIHorarioController::class)->group(function() {
