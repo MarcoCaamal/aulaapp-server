@@ -160,8 +160,7 @@ class APIAsesoriaController extends Controller
         $asesoria = Asesoria::findOrFail($id);
 
         // Verificar si el alumno ya ha confirmado su asistencia
-        $asistenciaExistente = Asistencia::findOrFail($request->input('asistencia_id'))
-            ->firstOrFail();
+        $asistenciaExistente = Asistencia::findOrFail($request->input('asistencia_id'));
         if ($asistenciaExistente->estatus == EstatusAsistenciaEnum::ASISTENCIA) {
             $response['message'] = 'Asistencia ya confirmada';
             $response['statusCode'] = 400;
