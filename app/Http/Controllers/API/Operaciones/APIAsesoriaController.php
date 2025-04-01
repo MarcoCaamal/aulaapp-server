@@ -136,7 +136,7 @@ class APIAsesoriaController extends Controller
     public function qrUpdate(int $id, Request $request)
     {
         $request->validate([
-            'asistencia_id' => ['required', 'number'],
+            'asistencia_id' => ['required', 'numeric'],
             'qrCode' => ['required']
         ]);
         $response = [
